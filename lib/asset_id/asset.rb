@@ -23,6 +23,23 @@ module AssetID
       @@nofingerprint ||= []
     end
     
+    def self.stamp(options={})
+      init(options)
+      assets = find
+      if assets.empty?
+        puts "No assets found" 
+        return 
+      end
+      assets.each do |asset|
+        asset.fingerprint
+        if options[:debug]
+          puts "AssetID: #{asset.relative_path}" 
+          puts "Fingerprint: #{asset.fingerprint}"
+        end
+      end
+      Cache.save!
+    end
+    
     def self.asset_paths
       @@asset_paths
     end
