@@ -116,7 +116,7 @@ module AssetID
       return p if relative_path =~ /^\/assets\// && !@@assetsfingerprint 
       
       fingerprint_name = File.join File.dirname(p), "#{File.basename(p, File.extname(p))}-#{md5}#{File.extname(p)}"
-      File.rename(p, path_prefix + "/" + fingerprint_name) if @@rename
+      File.rename(p, path_prefix + fingerprint_name) if @@rename
       
       fingerprint_name    
     end
