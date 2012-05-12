@@ -15,15 +15,18 @@ module AssetID
     @@debug = false
     @@nocache = false
     @@nofingerprint = false
-    @@inplacefingerprint = false
+    @@assetsfingerprint = false
+    @@rename = false
     
     def self.init(options)
       @@debug = options[:debug] if options[:debug]
       @@nocache = options[:nocache] if options[:nocache]
+      
       @@nofingerprint = options[:nofingerprint] if options[:nofingerprint]
       @@nofingerprint ||= []
-      @@inplacefingerprint = options[:inplacefingerprint] if options[:inplacefingerprint]
-      @@inplacefingerprint ||= []
+      
+      @@assetsfingerprint = options[:assetsfingerprint] if options[:assetsfingerprint]
+      @@rename = options[:rename] if options[:rename]    
     end
     
     def self.stamp(options={})
@@ -110,10 +113,10 @@ module AssetID
     
     def fingerprint
       p = relative_path
-      return p if relative_path =~ /^\/assets\// && !@@inplacefingerprint 
+      return p if relative_path =~ /^\/assets\// && !@@assetsfingerprint 
       
       fingerprint_name = File.join File.dirname(p), "#{File.basename(p, File.extname(p))}-#{md5}#{File.extname(p)}"
-      File.rename(p, path_prefix + "/" + fingerprint_name) if @@inplacefingerprint
+      File.rename(p, path_prefix + "/" + fingerprint_name) if @@rename
       
       fingerprint_name    
     end
