@@ -36,7 +36,7 @@ module AssetID
       assets.each do |asset|
         asset.fingerprint
         if options[:debug]
-          puts "AssetID: #{asset.relative_path}" 
+          puts "Relative path: #{asset.relative_path}" 
           puts "Fingerprint: #{asset.fingerprint}"
         end
       end
@@ -111,7 +111,11 @@ module AssetID
     def fingerprint
       p = relative_path
       return p if relative_path =~ /^\/assets\// && !@@inplacefingerprint 
-      File.join File.dirname(p), "#{File.basename(p, File.extname(p))}-#{md5}#{File.extname(p)}"
+      
+      fingerprint_name = File.join File.dirname(p), "#{File.basename(p, File.extname(p))}-#{md5}#{File.extname(p)}"
+      File.rename(p, fingerprint_name) if @@inplacefingerprint
+      
+      fingerprint_name    
     end
     
     def mime_type
