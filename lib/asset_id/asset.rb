@@ -15,12 +15,15 @@ module AssetID
     @@debug = false
     @@nocache = false
     @@nofingerprint = false
+    @@inplacefingerprint = false
     
     def self.init(options)
       @@debug = options[:debug] if options[:debug]
       @@nocache = options[:nocache] if options[:nocache]
       @@nofingerprint = options[:nofingerprint] if options[:nofingerprint]
       @@nofingerprint ||= []
+      @@inplacefingerprint = options[:inplacefingerprint] if options[:inplacefingerprint]
+      @@inplacefingerprint ||= []
     end
     
     def self.stamp(options={})
@@ -107,8 +110,8 @@ module AssetID
     
     def fingerprint
       p = relative_path
-      return p if relative_path =~ /^\/assets\//
-      File.join File.dirname(p), "#{File.basename(p, File.extname(p))}-id-#{md5}#{File.extname(p)}"
+      return p if relative_path =~ /^\/assets\// && !@@inplacefingerprint 
+      File.join File.dirname(p), "#{File.basename(p, File.extname(p))}-#{md5}#{File.extname(p)}"
     end
     
     def mime_type
@@ -171,7 +174,7 @@ module AssetID
     
     def cache_hit?
       return false if @@nocache or Cache.miss? self
-      puts "AssetID: #{relative_path} - Cache Hit" 
+      puts "AssetID: #{relative_path} - Cache Hit" if @@debug
       return true 
     end
     
