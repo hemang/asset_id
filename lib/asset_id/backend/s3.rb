@@ -1,4 +1,4 @@
-require 'aws/s3'
+require 'aws'
 
 module AssetID
   class S3
@@ -8,14 +8,15 @@ module AssetID
     end
   
     def self.connect_to_s3
-      AWS::S3::Base.establish_connection!(
-        :access_key_id => s3_config['access_key_id'],
-        :secret_access_key => s3_config['secret_access_key']
+      AWS.config(:logger => Rails.logger)
+      AWS.config(:access_key_id => s3_config['access_key_id'],
+      :secret_access_key => s3_config['secret_access_key']
       )
+      AWS::S3.new
     end
   
     def self.s3_permissions
-      :public_read
+      s3_config['permissions'] || :public_read
     end
   
     def self.s3_bucket
@@ -38,27 +39,38 @@ module AssetID
       s3_folder ? "/#{s3_folder}#{asset.fingerprint}" : asset.fingerprint
     end
     
+    def gzip_headers
+      {:content_encoding => 'gzip'}
+    end
+    
     def self.upload(options={})
       Asset.init(:debug => options[:debug], :nofingerprint => options[:nofingerprint])
       
       assets = Asset.find
       return if assets.empty?
     
-      connect_to_s3
-    
+      s3 = connect_to_s3
+              
+      bucket = s3.bucket[s3_bucket]
+      
+      # If the bucket doesn't exist, create it. Errors handled by lib, nice!
+      unless bucket.exists?
+          s3.buckets.create(s3_bucket)
+      end
+      
       assets.each do |asset|
       
         puts "AssetID: #{asset.relative_path}" if options[:debug]
       
         headers = {
           :content_type => asset.mime_type,
-          :access => s3_permissions,
+          :acl => s3_permissions,
         }.merge(asset.cache_headers)
         
         asset.replace_css_images!(:prefix => s3_prefix) if asset.css?
         
         if asset.gzip_type?
-          headers.merge!(asset.gzip_headers)
+          headers.merge!(gzip_headers)
           asset.gzip!
         end
         
@@ -68,10 +80,8 @@ module AssetID
         end
         
         unless options[:dry_run]
-          res = AWS::S3::S3Object.store(
-            full_path(asset),
+          res = bucket.objects[full_path(asset)].write(
             asset.data,
-            s3_bucket,
             headers
           ) 
           puts "  - Response: #{res.inspect}" if options[:debug]
