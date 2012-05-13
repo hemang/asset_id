@@ -52,8 +52,8 @@ module AssetID
           puts "Fingerprint: #{asset.fingerprint}"
         end
       
-        File.rename(path_prefix + p, path_prefix + fingerprint_name) if @@rename
-        FileUtils.cp(asset.path, File.join(path_prefix, asset.fingerprint)) if @@copy
+        File.rename(Asset.path_prefix + p, Asset.path_prefix + fingerprint_name) if @@rename
+        FileUtils.cp(asset.path, File.join(Asset.path_prefix, asset.fingerprint)) if @@copy
       end
       Cache.save!
     end
@@ -109,11 +109,11 @@ module AssetID
     end
     
     def self.get_absolute_path(for_path)
-      for_path =~ /#{path_prefix}/ ? for_path : File.join(path_prefix, for_path)
+      for_path =~ /#{Asset.path_prefix}/ ? for_path : File.join(Asset.path_prefix, for_path)
     end
     
     def relative_path
-      path.gsub(path_prefix, '')
+      path.gsub(Asset.path_prefix, '')
     end
     
     def gzip_type?
