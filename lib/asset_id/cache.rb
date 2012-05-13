@@ -11,6 +11,10 @@ module AssetID
       @cache ||= (YAML.load_file(cache_path) rescue {})
     end
     
+    def self.cache_file_name
+    
+    end
+    
     def self.cache_path
       File.join(Rails.root, 'config','asset_id_cache.yml')
     end

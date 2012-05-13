@@ -20,6 +20,7 @@ module AssetID
     @@replace_images = false
     @@copy = false
     @@gzip = false
+    @@asset_host = false
     
     def self.init(options)
       @@debug = options[:debug] if options[:debug]
@@ -33,13 +34,16 @@ module AssetID
       @@copy = options[:copy] if options[:copy]  
       @@replace_images = options[:replace_images] if options[:replace_images]  
       @@gzip = options[:gzip] if options[:gzip] 
+      
+      @@asset_host = options[:asset_host] if options[:asset_host]
+      @@asset_host ||= ''
     end
 
     def self.process!(options={})
       init(options)
       assets.each do |asset|
         #replace css images is intentionally before fingerprint       
-        asset.replace_css_images!(:prefix => s3_prefix) if asset.css? && @@replace_images
+        asset.replace_css_images!(:prefix => @@asset_host) if asset.css? && @@replace_images
         
         
         if asset.gzip_type? && @@gzip
@@ -134,11 +138,7 @@ module AssetID
       
       #Handle .gz files - eg. application.css.gz -> application-12345534123.css.gz 
       extension = (p =~ /\.gz$/ ? File.extname(File.basename(p, ".gz")) + ".gz" : File.extname(p))     
-      fingerprint_name = File.join File.dirname(p), "#{File.basename(p, extension)}-#{md5}#{extension}"
-      
-      puts "Fingerprint name: #{fingerprint_name}" if @@debug
-      
-      fingerprint_name    
+      File.join File.dirname(p), "#{File.basename(p, extension)}-#{md5}#{extension}"  
     end
     
     def mime_type
