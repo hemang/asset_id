@@ -65,7 +65,9 @@ module AssetID
         headers = {
           :content_type => asset.mime_type,
           :acl => s3_permissions,
-        }.merge(asset.cache_headers)
+          :cache_control => "public, max-age=31557600",
+          :expires => CGI.rfc1123_date(Time.now + 1.year)
+        }
         
         asset.replace_css_images!(:prefix => s3_prefix) if asset.css?
         

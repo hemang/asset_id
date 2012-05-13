@@ -17,6 +17,7 @@ module AssetID
     @@nofingerprint = false
     @@assetsfingerprint = false
     @@rename = false
+    @@replace_images = true
     
     def self.init(options)
       @@debug = options[:debug] if options[:debug]
@@ -26,7 +27,8 @@ module AssetID
       @@nofingerprint ||= []
       
       @@assetsfingerprint = options[:assetsfingerprint] if options[:assetsfingerprint]
-      @@rename = options[:rename] if options[:rename]    
+      @@rename = options[:rename] if options[:rename]  
+      @@replace_images = options[:replace_images] if options[:replace_images]  
     end
     
     def self.stamp(options={})
@@ -37,6 +39,9 @@ module AssetID
         return 
       end
       assets.each do |asset|
+        #replace css images is intentionally before fingerprint       
+        asset.replace_css_images!(:prefix => s3_prefix) if asset.css? && @@replace_images
+        
         asset.fingerprint
         if options[:debug]
           puts "Relative path: #{asset.relative_path}" 
@@ -116,6 +121,12 @@ module AssetID
       return p if relative_path =~ /^\/assets\// && !@@assetsfingerprint 
       
       fingerprint_name = File.join File.dirname(p), "#{File.basename(p, File.extname(p))}-#{md5}#{File.extname(p)}"
+      
+      if @@debug
+        puts "Fingerprint name: #{fingerprint_name}" 
+        puts "Fingerprint extname: #{File.extname( f )[1..-1]}" if File.extname(p) == 'gz'
+      end
+      
       File.rename(path_prefix + p, path_prefix + fingerprint_name) if @@rename
       
       fingerprint_name    

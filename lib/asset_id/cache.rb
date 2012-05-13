@@ -8,7 +8,7 @@ module AssetID
     end
     
     def self.cache
-      @cache ||= YAML.load_file(cache_path) rescue {}
+      @cache ||= (YAML.load_file(cache_path) rescue {})
     end
     
     def self.cache_path
@@ -30,7 +30,9 @@ module AssetID
     end
     
     def self.save!
+      puts "Begin writing file to #{cache_path}"
       File.open(cache_path, 'w') {|f| f.write(YAML.dump(cache))}
+      puts "Finished writing file to #{cache_path}"
     end
   
   end
