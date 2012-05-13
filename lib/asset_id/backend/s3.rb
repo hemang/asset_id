@@ -82,6 +82,7 @@ module AssetID
         end
         
         unless options[:dry_run]
+          #TODO: check for existing object based on hash before writing
           res = bucket.objects[full_path(asset)].write(
             asset.data,
             headers

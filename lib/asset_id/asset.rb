@@ -31,6 +31,7 @@ module AssetID
       @@replace_images = options[:replace_images] if options[:replace_images]  
     end
     
+    #TODO: Rename this to process
     def self.stamp(options={})
       init(options)
       assets = find
@@ -42,11 +43,17 @@ module AssetID
         #replace css images is intentionally before fingerprint       
         asset.replace_css_images!(:prefix => s3_prefix) if asset.css? && @@replace_images
         
+        #TODO: add gzip
+        
         asset.fingerprint
         if options[:debug]
           puts "Relative path: #{asset.relative_path}" 
           puts "Fingerprint: #{asset.fingerprint}"
         end
+        
+        #TODO: make copy default, and rename an option that can be used instead
+        #File.rename(path_prefix + p, path_prefix + fingerprint_name) if @@rename
+        FileUtils.cp(asset.path, File.join(path_prefix, asset.fingerprint)) if @@rename
       end
       Cache.save!
     end
@@ -67,15 +74,17 @@ module AssetID
       @@gzip_types = types
     end
     
+    #TODO: rename this to assets
     def self.find(paths=Asset.asset_paths)
       paths.inject([]) {|assets, path|
-        path = File.join Rails.root, 'public', path
+        path = get_absolute_path(path)
         a = Asset.new(path)
         assets << a if a.is_file? and !a.cache_hit?
+        
         assets += Dir.glob(path+'/**/*').inject([]) {|m, file|
           a = Asset.new(file); m << a if a.is_file? and !a.cache_hit?; m 
+          }
         }
-      }
     end
     
     def self.fingerprint(path)
@@ -97,7 +106,11 @@ module AssetID
     end
     
     def absolute_path
-      path =~ /#{path_prefix}/ ? path : File.join(path_prefix, path)
+      get_absolute_path(path)
+    end
+    
+    def get_absolute_path(for_path)
+      for_path =~ /#{path_prefix}/ ? for_path : File.join(path_prefix, for_path)
     end
     
     def relative_path
@@ -120,14 +133,11 @@ module AssetID
       p = relative_path
       return p if relative_path =~ /^\/assets\// && !@@assetsfingerprint 
       
-      fingerprint_name = File.join File.dirname(p), "#{File.basename(p, File.extname(p))}-#{md5}#{File.extname(p)}"
+      #Handle .gz files - eg. application.css.gz -> application-12345534123.css.gz 
+      extension = (p =~ /\.gz$/ ? File.extname(File.basename(p, ".gz")) + ".gz" : File.extname(p))     
+      fingerprint_name = File.join File.dirname(p), "#{File.basename(p, extension)}-#{md5}#{extension}"
       
-      if @@debug
-        puts "Fingerprint name: #{fingerprint_name}" 
-        puts "Fingerprint extname: #{File.extname( f )[1..-1]}" if File.extname(p) == 'gz'
-      end
-      
-      File.rename(path_prefix + p, path_prefix + fingerprint_name) if @@rename
+      puts "Fingerprint name: #{fingerprint_name}" if @@debug
       
       fingerprint_name    
     end
@@ -150,7 +160,8 @@ module AssetID
           uri.gsub!(/^\.\.\//, '/')
           
           # if the uri appears to begin with a protocol then the asset isn't on the local filesystem
-          if uri =~ /[a-z]+:\/\//i
+          # uri is unchanged for data and font uris
+          if uri =~ /[a-z]+:\/\//i || uri =~ /data:/i || uri =~ /^data:font/
             "url(#{uri})"
           else
             asset = Asset.new(uri)
