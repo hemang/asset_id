@@ -17,7 +17,8 @@ module AssetID
     @@nofingerprint = false
     @@assetsfingerprint = false
     @@rename = false
-    @@replace_images = true
+    @@replace_images = false
+    @@copy = false
     
     def self.init(options)
       @@debug = options[:debug] if options[:debug]
@@ -28,6 +29,7 @@ module AssetID
       
       @@assetsfingerprint = options[:assetsfingerprint] if options[:assetsfingerprint]
       @@rename = options[:rename] if options[:rename]  
+      @@copy = options[:copy] if options[:copy]  
       @@replace_images = options[:replace_images] if options[:replace_images]  
     end
     
@@ -51,9 +53,9 @@ module AssetID
           puts "Fingerprint: #{asset.fingerprint}"
         end
         
-        #TODO: make copy default, and rename an option that can be used instead
-        #File.rename(path_prefix + p, path_prefix + fingerprint_name) if @@rename
-        FileUtils.cp(asset.path, File.join(path_prefix, asset.fingerprint)) if @@rename
+        #TODO: make copy default, and rename an option that can be used instead        
+        File.rename(path_prefix + p, path_prefix + fingerprint_name) if @@rename
+        FileUtils.cp(asset.path, File.join(path_prefix, asset.fingerprint)) if @@copy
       end
       Cache.save!
     end
@@ -109,7 +111,7 @@ module AssetID
       get_absolute_path(path)
     end
     
-    def get_absolute_path(for_path)
+    def self.get_absolute_path(for_path)
       for_path =~ /#{path_prefix}/ ? for_path : File.join(path_prefix, for_path)
     end
     
