@@ -101,6 +101,8 @@ module AssetID
     
     def initialize(path)
       @path = path
+      #more detailed solution - https://github.com/where/asset_id/commit/b925b014df16f478570ca75b5347c437652d68fe
+      @path = path.split('?')[0]
       @path = absolute_path
     end
     
