@@ -11,8 +11,8 @@ class AssetTest < Test::Unit::TestCase
     AssetID::Cache.empty
   end
   
-  def test_find_assets_in_paths
-    assets = AssetID::Asset.find(['favicon.ico', 'images', 'javascripts', 'stylesheets'])
+  def test_assets_in_paths
+    assets = AssetID::Asset.assets(['favicon.ico', 'images', 'javascripts', 'stylesheets'])
     assert_equal 4, assets.count
   end
   

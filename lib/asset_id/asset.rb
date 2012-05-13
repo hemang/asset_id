@@ -34,15 +34,9 @@ module AssetID
       @@replace_images = options[:replace_images] if options[:replace_images]  
       @@gzip = options[:gzip] if options[:gzip] 
     end
-    
-    #TODO: Rename this to process
-    def self.stamp(options={})
+
+    def self.process!(options={})
       init(options)
-      assets = find
-      if assets.empty?
-        puts "No assets found" 
-        return 
-      end
       assets.each do |asset|
         #replace css images is intentionally before fingerprint       
         asset.replace_css_images!(:prefix => s3_prefix) if asset.css? && @@replace_images
@@ -57,8 +51,7 @@ module AssetID
           puts "Relative path: #{asset.relative_path}" 
           puts "Fingerprint: #{asset.fingerprint}"
         end
-        
-        #TODO: make copy default, and rename an option that can be used instead        
+      
         File.rename(path_prefix + p, path_prefix + fingerprint_name) if @@rename
         FileUtils.cp(asset.path, File.join(path_prefix, asset.fingerprint)) if @@copy
       end
@@ -80,9 +73,8 @@ module AssetID
     def self.gzip_types=(types)
       @@gzip_types = types
     end
-    
-    #TODO: rename this to assets
-    def self.find(paths=Asset.asset_paths)
+
+    def self.assets(paths=Asset.asset_paths)
       paths.inject([]) {|assets, path|
         path = get_absolute_path(path)
         a = Asset.new(path)

@@ -45,9 +45,6 @@ module AssetID
     
     def self.upload(options={})
       Asset.init(:debug => options[:debug], :nofingerprint => options[:nofingerprint])
-      
-      assets = Asset.find
-      return if assets.empty?
     
       s3 = connect_to_s3
               
@@ -58,7 +55,7 @@ module AssetID
           s3.buckets.create(s3_bucket)
       end
       
-      assets.each do |asset|
+      Asset.assets.each do |asset|
       
         puts "AssetID: #{asset.relative_path}" if options[:debug]
       
