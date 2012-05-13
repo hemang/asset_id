@@ -57,7 +57,8 @@ module AssetID
                   
         File.rename(Asset.path_prefix + relative_path, Asset.path_prefix + asset.fingerprint) if @@rename
 
-        FileUtils.cp(asset.path, File.join(Asset.path_prefix, asset.fingerprint)) if @@copy
+        #copy, if specified and not renaming
+        FileUtils.cp(asset.path, File.join(Asset.path_prefix, asset.fingerprint)) if !@@rename && @@copy  
       end
       Cache.save!
     end
@@ -165,14 +166,14 @@ module AssetID
     def replace_css_images!(options={})
       options.merge :regexp => Regexp.new(/url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/mi)
       options.merge :replace_with_b4_uri => "url("
-      options.merge :replace_with_after_uri ")"
+      options.merge :replace_with_after_uri => ")"
       replace_images!(options)
     end
     
     def replace_js_images!(options={})
       options.merge :regexp => Regexp.new(/src=(?:"([^"]*)"|'([^']*)'|([^)]*))/mi)
       options.merge :replace_with_b4_uri => "src=\""
-      options.merge :replace_with_after_uri "\""
+      options.merge :replace_with_after_uri => "\""
       replace_images!(options)
     end
     
