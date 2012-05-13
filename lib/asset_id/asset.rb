@@ -19,6 +19,7 @@ module AssetID
     @@rename = false
     @@replace_images = false
     @@copy = false
+    @@gzip = false
     
     def self.init(options)
       @@debug = options[:debug] if options[:debug]
@@ -31,6 +32,7 @@ module AssetID
       @@rename = options[:rename] if options[:rename]  
       @@copy = options[:copy] if options[:copy]  
       @@replace_images = options[:replace_images] if options[:replace_images]  
+      @@gzip = options[:gzip] if options[:gzip] 
     end
     
     #TODO: Rename this to process
@@ -45,7 +47,10 @@ module AssetID
         #replace css images is intentionally before fingerprint       
         asset.replace_css_images!(:prefix => s3_prefix) if asset.css? && @@replace_images
         
-        #TODO: add gzip
+        
+        if asset.gzip_type? && @@gzip
+          asset.gzip!
+        end
         
         asset.fingerprint
         if options[:debug]
@@ -167,8 +172,13 @@ module AssetID
             "url(#{uri})"
           else
             asset = Asset.new(uri)
-            # TODO: Check the referenced asset is in the asset_paths
+            
             puts "  - Changing CSS URI #{uri} to #{options[:prefix]}#{asset.fingerprint}" if @@debug
+            
+            # TODO: Check the referenced asset is in the asset_paths
+            # Suggested solution below. But, rescue is probably a better solution in case of nested paths and such
+            # - https://github.com/KeasInc/asset_id/commit/0fbd108c06ad18f50bfa63073b2a8c5bbac154fb
+            # - https://github.com/KeasInc/asset_id/commit/14ce9124938c15734ec0c61496fd371de2b8087c
             "url(#{options[:prefix]}#{asset.fingerprint})"
           end
         rescue Errno::ENOENT => e
@@ -179,6 +189,8 @@ module AssetID
     end
     
     def gzip!
+      #TODO: copy instead of replace original
+      
       # adapted from https://github.com/blakink/asset_id
       @data = returning StringIO.open('', 'w') do |gz_data|
         gz = Zlib::GzipWriter.new(gz_data, nil, nil)
