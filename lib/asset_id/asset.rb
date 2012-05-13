@@ -76,7 +76,7 @@ module AssetID
 
     def self.assets(paths=Asset.asset_paths)
       paths.inject([]) {|assets, path|
-        path = get_absolute_path(path)
+        path = Asset.get_absolute_path(path)
         a = Asset.new(path)
         assets << a if a.is_file? and !a.cache_hit?
         
@@ -105,7 +105,7 @@ module AssetID
     end
     
     def absolute_path
-      get_absolute_path(path)
+      Asset.get_absolute_path(path)
     end
     
     def self.get_absolute_path(for_path)

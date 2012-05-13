@@ -55,6 +55,7 @@ module AssetID
           s3.buckets.create(s3_bucket)
       end
       
+      #TODO: use process! instead of processing here
       Asset.assets.each do |asset|
       
         puts "AssetID: #{asset.relative_path}" if options[:debug]
