@@ -103,7 +103,7 @@ module AssetID
       @path = absolute_path
     end
     
-    def path_prefix
+    def self.path_prefix
       File.join Rails.root, 'public'
     end
     
