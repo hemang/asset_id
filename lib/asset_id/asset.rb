@@ -44,22 +44,29 @@ module AssetID
       assets.each do |asset|
         #replace css images is intentionally before fingerprint       
         asset.replace_css_images!(:prefix => @@asset_host) if asset.css? && @@replace_images
-        
-        
-        if asset.gzip_type? && @@gzip
-          asset.gzip!
-        end
+        asset.replace_js_images!(:prefix => @@asset_host) if asset.js? && @replace_images
         
         asset.fingerprint
         if options[:debug]
           puts "Relative path: #{asset.relative_path}" 
           puts "Fingerprint: #{asset.fingerprint}"
         end
-      
-        File.rename(Asset.path_prefix + p, Asset.path_prefix + fingerprint_name) if @@rename
+        
+        #If content modified, replace content of original
+        write_data if @@replace_images && (asset.css? || asset.js?)
+                  
+        File.rename(Asset.path_prefix + relative_path, Asset.path_prefix + asset.fingerprint) if @@rename
+
         FileUtils.cp(asset.path, File.join(Asset.path_prefix, asset.fingerprint)) if @@copy
       end
       Cache.save!
+    end
+    
+    def write_data
+      output_dir = File.dirname relative_path
+      FileUtils.mkdir_p(output_dir) unless File.exists?(output_dir)
+      raise OutputNotWritable, "AssetId doesn't have permission to write to \"#{output_dir}\"" unless File.writable?(output_dir)
+      File.open(absolute_path, 'wb+') {|f| f.write(data) }
     end
     
     def self.asset_paths
@@ -151,43 +158,66 @@ module AssetID
       mime_type == 'text/css'
     end
     
+    def js?
+      mime_type = 'application/javascript'
+    end
+    
     def replace_css_images!(options={})
+      options.merge :regexp => Regexp.new(/url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/mi)
+      options.merge :replace_with_b4_uri => "url("
+      options.merge :replace_with_after_uri ")"
+      replace_images!(options)
+    end
+    
+    def replace_js_images!(options={})
+      options.merge :regexp => Regexp.new(/src=(?:"([^"]*)"|'([^']*)'|([^)]*))/mi)
+      options.merge :replace_with_b4_uri => "src=\""
+      options.merge :replace_with_after_uri "\""
+      replace_images!(options)
+    end
+    
+    def replace_images!(options={})
       options[:prefix] ||= ''
-      # adapted from https://github.com/blakink/asset_id
-      data.gsub! /url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/mi do |match|
+      #defaults to css regex
+      regexp = options[:regexp] || /url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/mi 
+      data.gsub! regexp do |match|
         begin
           # $1 is the double quoted string, $2 is single quoted, $3 is no quotes
           uri = ($1 || $2 || $3).to_s.strip
           uri.gsub!(/^\.\.\//, '/')
           
+          b4_uri = options[:replace_with_b4_uri] || "url("
+          after_uri = options[:replace_with_b4_uri] || ")"
+          
+          original = "#{b4_uri}#{uri}#{after_uri}"
+        
           # if the uri appears to begin with a protocol then the asset isn't on the local filesystem
           # uri is unchanged for data and font uris
           if uri =~ /[a-z]+:\/\//i || uri =~ /data:/i || uri =~ /^data:font/
-            "url(#{uri})"
+            original
           else
             asset = Asset.new(uri)
-            
+          
             puts "  - Changing CSS URI #{uri} to #{options[:prefix]}#{asset.fingerprint}" if @@debug
-            
+          
             # TODO: Check the referenced asset is in the asset_paths
             # Suggested solution below. But, rescue is probably a better solution in case of nested paths and such
             # - https://github.com/KeasInc/asset_id/commit/0fbd108c06ad18f50bfa63073b2a8c5bbac154fb
             # - https://github.com/KeasInc/asset_id/commit/14ce9124938c15734ec0c61496fd371de2b8087c
-            "url(#{options[:prefix]}#{asset.fingerprint})"
+            "#{b4_uri}#{options[:prefix]}#{asset.fingerprint}#{after_uri}"
           end
         rescue Errno::ENOENT => e
           puts "  - Warning: #{uri} not found" if @@debug
-          "url(#{uri})"
+          original
         end
-      end
+    end 
+    
     end
     
     def gzip!
-      #TODO: copy instead of replace original
-      
       # adapted from https://github.com/blakink/asset_id
       @data = returning StringIO.open('', 'w') do |gz_data|
-        gz = Zlib::GzipWriter.new(gz_data, nil, nil)
+        gz = Zlib::GzipWriter.new(gz_data, Zlib::BEST_COMPRESSION, nil)
         gz.write(data)
         gz.close
       end.string
