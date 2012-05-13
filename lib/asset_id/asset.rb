@@ -53,7 +53,7 @@ module AssetID
         end
         
         #If content modified, replace content of original
-        write_data if @@replace_images && (asset.css? || asset.js?)
+        asset.write_data if @@replace_images && (asset.css? || asset.js?)
                   
         File.rename(Asset.path_prefix + relative_path, Asset.path_prefix + asset.fingerprint) if @@rename
 
