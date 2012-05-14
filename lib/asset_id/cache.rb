@@ -25,7 +25,7 @@ module AssetID
     
     def self.hit?(asset)
       return true if cache[asset.relative_path] and cache[asset.relative_path][:fingerprint] == asset.fingerprint
-      cache[asset.relative_path] = {:expires => asset.expiry_date.to_s, :fingerprint => asset.fingerprint}
+      cache[asset.relative_path] = {:fingerprint => asset.fingerprint}
       false
     end
   

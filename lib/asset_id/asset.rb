@@ -22,6 +22,8 @@ module AssetID
     @@gzip = false
     @@asset_host = false
     
+    attr_reader :path
+    
     def self.init(options)
       @@debug = options[:debug] if options[:debug]
       @@nocache = options[:nocache] if options[:nocache]
@@ -38,6 +40,14 @@ module AssetID
       
       @@asset_host = options[:asset_host] if options[:asset_host]
       @@asset_host ||= ''
+    end
+    
+    def initialize(path)
+      @path = path
+      #more detailed solution - https://github.com/where/asset_id/commit/b925b014df16f478570ca75b5347c437652d68fe
+      @path = path.split('?')[0]
+      @path = path.split('#')[0]
+      @path = absolute_path
     end
 
     def self.process!(options={})
@@ -59,14 +69,29 @@ module AssetID
         
         #If content modified, replace content of original
         asset.write_data if @@replace_images && (asset.css? || asset.js?)
-                  
-        File.rename(Asset.path_prefix + relative_path, Asset.path_prefix + asset.fingerprint) if @@rename
+        
+        files = []
+        fingerprint_path = File.join(Asset.path_prefix, asset.fingerprint)
+        files << fingerprint_path
+        
+        if @@rename          
+          File.rename(asset.path, fingerprint_path) 
+        end
 
         #copy, if specified and not renaming
         if !@@rename && @@copy
-          copy_path = File.join(Asset.path_prefix, asset.fingerprint)
-          FileUtils.cp(asset.path, copy_path) if !File.exists? copy_path
+          files << asset.path
+          FileUtils.cp(asset.path, fingerprint_path) if !File.exists? copy_path
         end  
+        
+        if @@gzip
+          asset.gzip!
+          files.each do |file|
+            zip_name = "#{file}.gz"
+            File.open(zip_name, 'wb+') {|f| f.write(data) }
+          end
+          #gz is served automatically if available so no need to cache in manifest
+        end
       end
       Cache.save!
     end
@@ -76,50 +101,6 @@ module AssetID
       FileUtils.mkdir_p(output_dir) unless File.exists?(output_dir)
       raise OutputNotWritable, "AssetId doesn't have permission to write to \"#{output_dir}\"" unless File.writable?(output_dir)
       File.open(absolute_path, 'wb+') {|f| f.write(data) }
-    end
-    
-    def self.asset_paths
-      @@asset_paths
-    end
-
-    def self.gzip_types
-      @@gzip_types
-    end
-    
-    def self.asset_paths=(paths)
-      @@asset_paths = paths
-    end
-    
-    def self.gzip_types=(types)
-      @@gzip_types = types
-    end
-
-    def self.assets(paths=Asset.asset_paths)
-      paths.inject([]) {|assets, path|
-        path = Asset.get_absolute_path(path)
-        a = Asset.new(path)
-        assets << a if a.is_file? and !a.cache_hit?
-        
-        assets += Dir.glob(path+'/**/*').inject([]) {|m, file|
-          a = Asset.new(file); m << a if a.is_file? and !a.cache_hit?; m 
-          }
-        }
-    end
-    
-    def self.fingerprint(path)
-      asset = Asset.new(path)
-      hit = Cache.get(asset)
-      return hit[:fingerprint] if hit
-      return asset.fingerprint
-    end
-    
-    attr_reader :path
-    
-    def initialize(path)
-      @path = path
-      #more detailed solution - https://github.com/where/asset_id/commit/b925b014df16f478570ca75b5347c437652d68fe
-      @path = path.split('?')[0]
-      @path = absolute_path
     end
     
     def self.path_prefix
@@ -138,16 +119,31 @@ module AssetID
       path.gsub(Asset.path_prefix, '')
     end
     
-    def gzip_type?
-      Asset.gzip_types.include? mime_type
+    def self.assets(paths=Asset.asset_paths)
+      paths.inject([]) {|assets, path|
+        path = Asset.get_absolute_path(path)
+        a = Asset.new(path)
+        assets << a if a.is_file? and !a.cache_hit?
+        
+        assets += Dir.glob(path+'/**/*').inject([]) {|m, file|
+          a = Asset.new(file); m << a if a.is_file? and !a.cache_hit?; m 
+          }
+        }
     end
     
-    def data
-      @data ||= File.read(path)
+    def self.asset_paths
+      @@asset_paths
     end
     
-    def md5
-      @digest ||= Digest::MD5.hexdigest(data)
+    def self.asset_paths=(paths)
+      @@asset_paths = paths
+    end
+    
+    def self.fingerprint(path)
+      asset = Asset.new(path)
+      hit = Cache.get(asset)
+      return hit[:fingerprint] if hit
+      return asset.fingerprint
     end
     
     def fingerprint
@@ -160,6 +156,10 @@ module AssetID
       extension = (p =~ /\.gz$/ ? File.extname(File.basename(p, ".gz")) + ".gz" : File.extname(p))     
       
       File.join File.dirname(p), "#{File.basename(p, extension)}-#{md5}#{extension}"  
+    end
+    
+    def md5
+      @digest ||= Digest::MD5.hexdigest(data)
     end
     
     def mime_type
@@ -245,16 +245,16 @@ module AssetID
       end.string
     end
     
-    def expiry_date
-      @expiry_date ||= (Time.now + (60*60*24*365)).httpdate
+    def self.gzip_types
+      @@gzip_types
     end
     
-    def cache_headers
-      {'Expires' => expiry_date, 'Cache-Control' => 'public'} # 1 year expiry
+    def self.gzip_types=(types)
+      @@gzip_types = types
     end
     
-    def gzip_headers
-      {'Content-Encoding' => 'gzip', 'Vary' => 'Accept-Encoding'}
+    def gzip_type?
+      Asset.gzip_types.include? mime_type
     end
     
     def is_file?
@@ -265,6 +265,10 @@ module AssetID
       return false if @@nocache or Cache.miss? self
       puts "AssetID: #{relative_path} - Cache Hit" if @@debug
       return true 
+    end
+       
+    def data
+      @data ||= File.read(path)
     end
     
   end
