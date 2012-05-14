@@ -175,22 +175,28 @@ module AssetID
     end
     
     def replace_css_images!(options={})
-      options.merge :regexp => Regexp.new(/url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/mi)
-      options.merge :replace_with_b4_uri => "url("
-      options.merge :replace_with_after_uri => ")"
-      replace_images!(options)
+      replace_url_tag_images(options)
     end
     
     def replace_js_images!(options={})
-      options.merge :regexp => Regexp.new(/src=(?:"([^"]*)"|'([^']*)'|([^)]*))/mi)
-      options.merge :replace_with_b4_uri => "src=\""
-      options.merge :replace_with_after_uri => "\""
+      replace_src_tag_images!(options)
+      replace_url_tag_images!(options)
+    end
+    
+    def replace_url_tag_images!(options={})
+      replace_images!(options) #default
+    end
+    
+    def replace_src_tag_images!(options={})
+      options.merge! :regexp => Regexp.new(/src=(?:"([^"]*)"|'([^']*)'|([^)]*))/mi)
+      options.merge! :replace_with_b4_uri => "src=\""
+      options.merge! :replace_with_after_uri => "\""
       replace_images!(options)
     end
     
     def replace_images!(options={})
       options[:prefix] ||= ''
-      #defaults to css regex
+      #defaults to url tag regex
       regexp = options[:regexp] || /url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/mi 
       data.gsub! regexp do |match|
         begin
@@ -210,7 +216,7 @@ module AssetID
           else
             asset = Asset.new(uri)
           
-            puts "  - Changing CSS URI #{uri} to #{options[:prefix]}#{asset.fingerprint}" if @@debug
+            puts "  - Changing URI #{uri} to #{options[:prefix]}#{asset.fingerprint}" if @@debug
           
             # TODO: Check the referenced asset is in the asset_paths
             # Suggested solution below. But, rescue is probably a better solution in case of nested paths and such
