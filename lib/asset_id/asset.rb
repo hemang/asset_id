@@ -44,9 +44,11 @@ module AssetID
     
     def initialize(path)
       @path = path
+      
       #more detailed solution - https://github.com/where/asset_id/commit/b925b014df16f478570ca75b5347c437652d68fe
-      @path = path.split('?')[0]
-      @path = path.split('#')[0]
+      pos = [path.index("#"), path.index("?")].compact.min
+      @path = path.slice(0,pos) unless pos.nil?
+      
       @path = absolute_path
     end
 
@@ -208,6 +210,11 @@ module AssetID
           uri = ($1 || $2 || $3).to_s.strip
           uri.gsub!(/^\.\.\//, '/')
           
+          #Important for css fixes that depend on query params and hashes          
+          suffix = "" 
+          pos = [path.index("#"), path.index("?")].compact.min
+          suffix = uri.slice(pos..-1) unless pos.nil?
+                    
           b4_uri = options[:replace_with_b4_uri] || "url("
           after_uri = options[:replace_with_after_uri] || ")"
           
@@ -226,7 +233,7 @@ module AssetID
             # Suggested solution below. But, rescue is probably a better solution in case of nested paths and such
             # - https://github.com/KeasInc/asset_id/commit/0fbd108c06ad18f50bfa63073b2a8c5bbac154fb
             # - https://github.com/KeasInc/asset_id/commit/14ce9124938c15734ec0c61496fd371de2b8087c
-            "#{b4_uri}#{options[:prefix]}#{asset.fingerprint}#{after_uri}"
+            "#{b4_uri}#{options[:prefix]}#{asset.fingerprint}#{suffix}#{after_uri}"
           end
         rescue Errno::ENOENT => e
           puts "  - Warning: #{uri} not found" if @@debug
