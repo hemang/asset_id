@@ -188,8 +188,8 @@ module AssetID
     end
     
     def replace_src_tag_images!(options={})
-      options.merge! :regexp => Regexp.new(/src=(?:"([^"]*)"|'([^']*)'|([^)]*))/mi)
-      options.merge! :replace_with_b4_uri => "src=\""
+      options.merge! :regexp => Regexp.new(/src=(?:"\/images([^"]*)"|'\/images([^']*)'|\/images([^)]*))/mi)
+      options.merge! :replace_with_b4_uri => "src=\"\/images"
       options.merge! :replace_with_after_uri => "\""
       replace_images!(options)
     end
