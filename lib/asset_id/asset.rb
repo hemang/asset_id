@@ -171,7 +171,7 @@ module AssetID
     end
     
     def js?
-      mime_type = 'application/javascript'
+      mime_type == 'application/javascript'
     end
     
     def replace_css_images!(options={})
