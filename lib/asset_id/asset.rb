@@ -43,6 +43,9 @@ module AssetID
     def self.process!(options={})
       init(options)
       assets.each do |asset|
+        @@skip_assets.each do |skip_regex|
+          next if relative_path =~ skip_regex 
+        end
         #replace css images is intentionally before fingerprint       
         asset.replace_css_images!(:prefix => @@asset_host) if asset.css? && @@replace_images
         asset.replace_js_images!(:prefix => @@asset_host) if asset.js? && @replace_images
@@ -148,12 +151,13 @@ module AssetID
     
     def fingerprint
       p = relative_path
-      @@skip_assets.each do |skip_regex|
-        return p if relative_path =~ skip_regex 
-      end
+      
+      #TODO: figure out when it is appropriate to return relative path
+      #Used to do something like: return p if p =~ /^\/assets\//
       
       #Handle .gz files - eg. application.css.gz -> application-12345534123.css.gz 
       extension = (p =~ /\.gz$/ ? File.extname(File.basename(p, ".gz")) + ".gz" : File.extname(p))     
+      
       File.join File.dirname(p), "#{File.basename(p, extension)}-#{md5}#{extension}"  
     end
     

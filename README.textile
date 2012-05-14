@@ -1,5 +1,7 @@
 h1. Asset ID - Asset stamping and uploading to S3 for Rails
 
+h2. Updates: Uses aws-sdk, and other cool features. Updated README coming soon.
+
 h2. About
 
 Uploads static assets to Amazon S3 with unique identifiers encoded into the path of the asset. 
