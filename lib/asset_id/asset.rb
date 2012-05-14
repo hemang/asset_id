@@ -43,9 +43,10 @@ module AssetID
     def self.process!(options={})
       init(options)
       assets.each do |asset|
-        @@skip_assets.each do |skip_regex|
-          next if asset.relative_path =~ skip_regex 
+        next unless @@skip_assets.each do |skip_regex|
+          break if asset.relative_path =~ skip_regex 
         end
+        
         #replace css images is intentionally before fingerprint       
         asset.replace_css_images!(:prefix => @@asset_host) if asset.css? && @@replace_images
         asset.replace_js_images!(:prefix => @@asset_host) if asset.js? && @replace_images
