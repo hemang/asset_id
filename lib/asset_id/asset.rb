@@ -49,7 +49,7 @@ module AssetID
         
         #replace css images is intentionally before fingerprint       
         asset.replace_css_images!(:prefix => @@asset_host) if asset.css? && @@replace_images
-        asset.replace_js_images!(:prefix => @@asset_host) if asset.js? && @replace_images
+        asset.replace_js_images!(:prefix => @@asset_host) if asset.js? && @@replace_images
         
         asset.fingerprint
         if options[:debug]
