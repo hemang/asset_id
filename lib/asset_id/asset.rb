@@ -185,7 +185,7 @@ module AssetID
     end
     
     def replace_url_tag_images!(options={})
-      options[:regexp] || options.merge! :regexp => Regexp.new(/url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/mi)
+      options[:regexp] ||= Regexp.new(/url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/mi)
       options.merge! :replace_with_b4_uri => "url("
       options.merge! :replace_with_after_uri => ")"
       replace_images!(options) #default
