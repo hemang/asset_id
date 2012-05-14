@@ -15,7 +15,7 @@ module AssetID
     @@debug = false
     @@nocache = false
     @@nofingerprint = false
-    @@assetsfingerprint = false
+    @@skip_assets = false
     @@rename = false
     @@replace_images = false
     @@copy = false
@@ -29,7 +29,8 @@ module AssetID
       @@nofingerprint = options[:nofingerprint] if options[:nofingerprint]
       @@nofingerprint ||= []
       
-      @@assetsfingerprint = options[:assetsfingerprint] if options[:assetsfingerprint]
+      @@skip_assets = options[:skip_assets] if options[:skip_assets]
+      @@skip_assets ||= []
       @@rename = options[:rename] if options[:rename]  
       @@copy = options[:copy] if options[:copy]  
       @@replace_images = options[:replace_images] if options[:replace_images]  
@@ -58,7 +59,10 @@ module AssetID
         File.rename(Asset.path_prefix + relative_path, Asset.path_prefix + asset.fingerprint) if @@rename
 
         #copy, if specified and not renaming
-        FileUtils.cp(asset.path, File.join(Asset.path_prefix, asset.fingerprint)) if !@@rename && @@copy  
+        if !@@rename && @@copy
+          copy_path = File.join(Asset.path_prefix, asset.fingerprint)
+          FileUtils.cp(asset.path, copy_path) if !File.exists? copy_path
+        end  
       end
       Cache.save!
     end
@@ -144,7 +148,9 @@ module AssetID
     
     def fingerprint
       p = relative_path
-      return p if relative_path =~ /^\/assets\// && !@@assetsfingerprint 
+      @@skip_assets.each do |skip_regex|
+        return p if relative_path =~ skip_regex 
+      end
       
       #Handle .gz files - eg. application.css.gz -> application-12345534123.css.gz 
       extension = (p =~ /\.gz$/ ? File.extname(File.basename(p, ".gz")) + ".gz" : File.extname(p))     
@@ -209,7 +215,7 @@ module AssetID
           end
         rescue Errno::ENOENT => e
           puts "  - Warning: #{uri} not found" if @@debug
-          original
+          original #TODO: Should this have asset_host?
         end
     end 
     
