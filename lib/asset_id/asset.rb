@@ -44,7 +44,7 @@ module AssetID
       init(options)
       assets.each do |asset|
         @@skip_assets.each do |skip_regex|
-          next if relative_path =~ skip_regex 
+          next if asset.relative_path =~ skip_regex 
         end
         #replace css images is intentionally before fingerprint       
         asset.replace_css_images!(:prefix => @@asset_host) if asset.css? && @@replace_images
