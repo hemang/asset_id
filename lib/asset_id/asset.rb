@@ -175,7 +175,7 @@ module AssetID
     end
     
     def replace_css_images!(options={})
-      replace_url_tag_images(options)
+      replace_url_tag_images!(options)
     end
     
     def replace_js_images!(options={})
