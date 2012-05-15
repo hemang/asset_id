@@ -222,7 +222,7 @@ module AssetID
           pos = [uri.index("#"), uri.index("?")].compact.min
           suffix = uri.slice(pos..-1) unless pos.nil?
           
-          suffix = "" if suffix =~ \?\d{10} && @@remove_timestamps
+          suffix = "" if suffix =~ /\?\d{10}/ && @@remove_timestamps
                     
           b4_uri = options[:replace_with_b4_uri] || "url("
           after_uri = options[:replace_with_after_uri] || ")"
