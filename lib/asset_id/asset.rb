@@ -206,7 +206,7 @@ module AssetID
     
     def replace_images!(options={})
       options[:asset_host] ||= ''
-      options[:web_host] || = ''
+      options[:web_host] ||= ''
       #defaults to url tag regex
       regexp = options[:regexp] || /url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/mi 
       data.gsub! regexp do |match|
