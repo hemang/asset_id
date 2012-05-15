@@ -87,7 +87,7 @@ module AssetID
         #copy, if specified and not renaming
         if !@@rename && @@copy
           files << asset.path
-          FileUtils.cp(asset.path, fingerprint_path) if !File.exists? copy_path
+          FileUtils.cp(asset.path, fingerprint_path) if !File.exists? fingerprint_path
         end  
         
         if @@gzip
