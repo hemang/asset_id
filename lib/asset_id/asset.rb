@@ -22,6 +22,7 @@ module AssetID
     @@gzip = false
     @@asset_host = false
     @@web_host = false
+    @@remove_timestamps = true
     
     attr_reader :path
     
@@ -37,7 +38,8 @@ module AssetID
       @@rename = options[:rename] if options[:rename]  
       @@copy = options[:copy] if options[:copy]  
       @@replace_images = options[:replace_images] if options[:replace_images]  
-      @@gzip = options[:gzip] if options[:gzip] 
+      @@gzip = options[:gzip] if options[:gzip]       
+      @@remove_timestamps = options[:remove_timestamps] if options[:remove_timestamps]   
       
       @@asset_host = options[:asset_host] if options[:asset_host]
       @@asset_host ||= ''
@@ -219,6 +221,8 @@ module AssetID
           suffix = "" 
           pos = [uri.index("#"), uri.index("?")].compact.min
           suffix = uri.slice(pos..-1) unless pos.nil?
+          
+          suffix = "" if suffix =~ \?\d{10} && @@remove_timestamps
                     
           b4_uri = options[:replace_with_b4_uri] || "url("
           after_uri = options[:replace_with_after_uri] || ")"
