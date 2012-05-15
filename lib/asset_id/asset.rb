@@ -96,7 +96,7 @@ module AssetID
           asset.gzip!
           files.each do |file|
             zip_name = "#{file}.gz"
-            File.open(zip_name, 'wb+') {|f| f.write(data) }
+            File.open(zip_name, 'wb+') {|f| f.write(asset.data) }
           end
           #gz is served automatically if available so no need to cache in manifest
         end
