@@ -217,7 +217,7 @@ module AssetID
           
           #Important for css fixes that depend on query params and hashes          
           suffix = "" 
-          pos = [path.index("#"), path.index("?")].compact.min
+          pos = [uri.index("#"), uri.index("?")].compact.min
           suffix = uri.slice(pos..-1) unless pos.nil?
                     
           b4_uri = options[:replace_with_b4_uri] || "url("
@@ -233,7 +233,7 @@ module AssetID
             asset = Asset.new(uri)            
             host = uri=~ /fonts/i ? options[:web_host] : options[:asset_host] 
             
-            puts "  - Changing URI #{uri} to #{host}#{asset.fingerprint}" if @@debug
+            puts "  - Changing URI #{uri} to #{host}#{asset.fingerprint}#{suffix}" if @@debug
           
             # TODO: Check the referenced asset is in the asset_paths
             # Suggested solution below. But, rescue is probably a better solution in case of nested paths and such
