@@ -21,6 +21,7 @@ module AssetID
     @@copy = false
     @@gzip = false
     @@asset_host = false
+    @@web_host = false
     
     attr_reader :path
     
@@ -40,6 +41,9 @@ module AssetID
       
       @@asset_host = options[:asset_host] if options[:asset_host]
       @@asset_host ||= ''
+      
+      @@web_host = options[:web_host] if options[:web_host]
+      @@web_host ||= ''
     end
     
     def initialize(path)
@@ -60,8 +64,8 @@ module AssetID
         end
         
         #replace css images is intentionally before fingerprint       
-        asset.replace_css_images!(:prefix => @@asset_host) if asset.css? && @@replace_images
-        asset.replace_js_images!(:prefix => @@asset_host) if asset.js? && @@replace_images
+        asset.replace_css_images!(:asset_host => @@asset_host, :web_host => @@web_host) if asset.css? && @@replace_images
+        asset.replace_js_images!(:asset_host => @@asset_host, :web_host => @@web_host) if asset.js? && @@replace_images
         
         asset.fingerprint
         if options[:debug]
@@ -201,7 +205,8 @@ module AssetID
     end
     
     def replace_images!(options={})
-      options[:prefix] ||= ''
+      options[:asset_host] ||= ''
+      options[:web_host] || = ''
       #defaults to url tag regex
       regexp = options[:regexp] || /url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/mi 
       data.gsub! regexp do |match|
@@ -221,19 +226,20 @@ module AssetID
           original = "#{b4_uri}#{uri}#{after_uri}"
         
           # if the uri appears to begin with a protocol then the asset isn't on the local filesystem
-          # uri is unchanged for data and font uris
-          if uri =~ /[a-z]+:\/\//i || uri =~ /data:/i || uri =~ /^data:font/
+          # uri is unchanged for data and data font uris
+          if uri =~ /[a-z]+:\/\//i || uri =~ /data:/i
             original
           else
-            asset = Asset.new(uri)
-          
-            puts "  - Changing URI #{uri} to #{options[:prefix]}#{asset.fingerprint}" if @@debug
+            asset = Asset.new(uri)            
+            host = uri=~ /fonts/i ? options[:web_host] : options[:asset_host] 
+            
+            puts "  - Changing URI #{uri} to #{host}#{asset.fingerprint}" if @@debug
           
             # TODO: Check the referenced asset is in the asset_paths
             # Suggested solution below. But, rescue is probably a better solution in case of nested paths and such
             # - https://github.com/KeasInc/asset_id/commit/0fbd108c06ad18f50bfa63073b2a8c5bbac154fb
             # - https://github.com/KeasInc/asset_id/commit/14ce9124938c15734ec0c61496fd371de2b8087c
-            "#{b4_uri}#{options[:prefix]}#{asset.fingerprint}#{suffix}#{after_uri}"
+            "#{b4_uri}#{host}#{asset.fingerprint}#{suffix}#{after_uri}"
           end
         rescue Errno::ENOENT => e
           puts "  - Warning: #{uri} not found" if @@debug
