@@ -13,9 +13,9 @@ module AssetID
     @gzip_types = DEFAULT_GZIP_TYPES
     
     class << self
-      :debug, :nocache, :nofingerprint, :skip_assets,
-      :rename, :replace_images, :copy, :gzip, :asset_host,
-      :web_host, :remove_timestamps, :asset_paths, :gzip_types
+      attr_reader     :debug, :nocache, :nofingerprint, :skip_assets,
+                      :rename, :replace_images, :copy, :gzip, :asset_host,
+                      :web_host, :remove_timestamps, :asset_paths, :gzip_types
     end
     
     @debug = false
