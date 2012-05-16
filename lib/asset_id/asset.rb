@@ -61,7 +61,7 @@ module AssetID
     def self.process!(options={})
       init(options)
       assets.each do |asset|
-        if asset.cache_hit? || (@@skip_assets && asset.relative_path =~ @@skip_assets) 
+        if @@skip_assets && asset.relative_path =~ @@skip_assets
           puts "Skipping #{asset.path}" if options[:debug]
           next
         end
@@ -83,13 +83,14 @@ module AssetID
         fingerprint_path = File.join(Asset.path_prefix, asset.fingerprint)
         files << fingerprint_path
         
-        if @@rename          
+        if @@rename 
+          puts "Renaming #{asset.path} to #{fingerprint_path}" if options[:debug]         
           File.rename(asset.path, fingerprint_path) 
         end
 
         #copy, if specified and not renaming
         if !@@rename && @@copy
-          puts "Renaming #{asset.path} to #{fingerprint_path}" if options[:debug]
+          puts "Copying #{asset.path} to #{fingerprint_path}" if options[:debug]
           files << asset.path
           FileUtils.cp(asset.path, fingerprint_path) if !File.exists? fingerprint_path
         end  
