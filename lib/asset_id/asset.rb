@@ -33,25 +33,17 @@ module AssetID
     attr_reader :path
     
     def self.init(options)
-      @debug = options[:debug] if options[:debug]
-      @nocache = options[:nocache] if options[:nocache]
-      
-      @nofingerprint = options[:nofingerprint] if options[:nofingerprint]
-      @nofingerprint ||= []
-      
-      @skip_assets = options[:skip_assets] if options[:skip_assets]
-      @skip_assets ||= nil
-      @rename = options[:rename] if options[:rename]  
-      @copy = options[:copy] if options[:copy]  
-      @replace_images = options[:replace_images] if options[:replace_images]  
-      @gzip = options[:gzip] if options[:gzip]       
-      @remove_timestamps = options[:remove_timestamps] if options[:remove_timestamps]   
-      
-      @asset_host = options[:asset_host] if options[:asset_host]
-      @asset_host ||= ''
-      
-      @web_host = options[:web_host] if options[:web_host]
-      @web_host ||= ''
+      @debug = options[:debug] || false
+      @nocache = options[:nocache] || false
+      @nofingerprint = options[:nofingerprint] || []      
+      @skip_assets = options[:skip_assets] || nil
+      @rename = options[:rename] || false
+      @copy = options[:copy] || false
+      @replace_images = options[:replace_images] || false
+      @gzip = options[:gzip] || false     
+      @remove_timestamps = !(options[:remove_timestamps] == false)
+      @asset_host = options[:asset_host] || ''       
+      @web_host = options[:web_host] || ''
     end
     
     def initialize(path)
