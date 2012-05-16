@@ -61,15 +61,17 @@ module AssetID
     def self.process!(options={})
       init(options)
       assets.each do |asset|
+        next unless asset.cache_hit?   
         next unless @@skip_assets.each do |skip_regex|
           break if asset.relative_path =~ skip_regex 
+          puts "Skipping #{asset.path}" if options[:debug]
         end
-        
+                
         #replace css images is intentionally before fingerprint       
         asset.replace_css_images!(:asset_host => @@asset_host, :web_host => @@web_host) if asset.css? && @@replace_images
         asset.replace_js_images!(:asset_host => @@asset_host, :web_host => @@web_host) if asset.js? && @@replace_images
         
-        asset.fingerprint
+        
         if options[:debug]
           puts "Relative path: #{asset.relative_path}" 
           puts "Fingerprint: #{asset.fingerprint}"
@@ -88,14 +90,16 @@ module AssetID
 
         #copy, if specified and not renaming
         if !@@rename && @@copy
+          puts "Renaming #{asset.path} to #{fingprint_path}" if options[:debug]
           files << asset.path
           FileUtils.cp(asset.path, fingerprint_path) if !File.exists? fingerprint_path
         end  
         
         if @@gzip
           asset.gzip!
-          files.each do |file|
-            zip_name = "#{file}.gz"
+          files.each do |file|          
+            zip_name = "#{file}.gzip"
+            puts "Zipping #{file} to #{zip_name}" if options[:debug]
             File.open(zip_name, 'wb+') {|f| f.write(asset.data) }
           end
           #gz is served automatically if available so no need to cache in manifest
