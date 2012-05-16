@@ -90,7 +90,7 @@ module AssetID
 
         #copy, if specified and not renaming
         if !@@rename && @@copy
-          puts "Renaming #{asset.path} to #{fingprint_path}" if options[:debug]
+          puts "Renaming #{asset.path} to #{fingerprint_path}" if options[:debug]
           files << asset.path
           FileUtils.cp(asset.path, fingerprint_path) if !File.exists? fingerprint_path
         end  
