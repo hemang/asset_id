@@ -15,7 +15,7 @@ module AssetID
     @@debug = false
     @@nocache = false
     @@nofingerprint = false
-    @@skip_assets = false
+    @@skip_assets = nil
     @@rename = false
     @@replace_images = false
     @@copy = false
@@ -34,7 +34,7 @@ module AssetID
       @@nofingerprint ||= []
       
       @@skip_assets = options[:skip_assets] if options[:skip_assets]
-      @@skip_assets ||= []
+      @@skip_assets ||= nil
       @@rename = options[:rename] if options[:rename]  
       @@copy = options[:copy] if options[:copy]  
       @@replace_images = options[:replace_images] if options[:replace_images]  
@@ -61,10 +61,9 @@ module AssetID
     def self.process!(options={})
       init(options)
       assets.each do |asset|
-        next unless asset.cache_hit?   
-        next unless @@skip_assets.each do |skip_regex|
-          break if asset.relative_path =~ skip_regex 
+        if asset.cache_hit? || (@@skip_assets && asset.relative_path =~ @@skip_assets) 
           puts "Skipping #{asset.path}" if options[:debug]
+          next
         end
                 
         #replace css images is intentionally before fingerprint       
