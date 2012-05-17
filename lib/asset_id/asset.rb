@@ -23,6 +23,7 @@ module AssetID
     @@asset_host = false
     @@web_host = false
     @@remove_timestamps = true
+    @@replace_font_gz = false
     
     attr_reader :path
     
@@ -38,6 +39,7 @@ module AssetID
       @@remove_timestamps = !(options[:remove_timestamps] == false)
       @@asset_host = options[:asset_host] || ''       
       @@web_host = options[:web_host] || ''
+      @@replace_font_gz = options[:replace_font_gz] || false
     end
     
     def initialize(path)
@@ -89,7 +91,7 @@ module AssetID
         
         if @@gzip
           #Update paths to fonts, PIE.htc with .gzip extension for css assets     
-          asset.replace_font_gzips!(:web_host => @@web_host) if asset.css? && @@replace_images
+          asset.replace_font_gzips!(:web_host => @@web_host) if asset.css? && @@replace_font_gz
           asset.gzip!
           files.each do |file|          
             zip_name = "#{file}.gzip"
@@ -251,28 +253,33 @@ module AssetID
     end
     
     def replace_font_gzips!(options={})
-      data.gsub! /url\((?:"([^"]*\/fonts\/\S*)"|'([^']*\/fonts\/\S*)'|([^)]*\/fonts\/\S*))\)/mi do |match|
+      data.gsub! /url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/mi do |match|
         begin
           uri = ($1 || $2 || $3).to_s.strip
           uri.gsub!(/^\.\.\//, '/')
-                    
+                                       
           b4_uri = options[:replace_with_b4_uri] || "url("
           after_uri = options[:replace_with_after_uri] || ")"
-          original = "#{b4_uri}#{uri}#{after_uri}"
-          base_uri = uri
+          original = "url(#{uri})"
+          
+          if uri =~ /fonts\//mi 
+            base_uri = uri
                      
-          suffix = "" 
-          pos = [uri.index("#"), uri.index("?")].compact.min
-          unless pos.nil?
-            suffix = uri.slice(pos..-1) 
-            base_uri = uri.slice(0,pos)
+            suffix = "" 
+            pos = [uri.index("#"), uri.index("?")].compact.min
+            unless pos.nil?
+              suffix = uri.slice(pos..-1) 
+              base_uri = uri.slice(0,pos)
+            end
+            suffix = "" if suffix =~ /\?\d{10}/ && @@remove_timestamps
+          
+            asset = Asset.new(uri)                       
+            puts "  - Changing URI #{uri} to #{base_uri}.gzip#{suffix}" if @@debug
+          
+            "url(#{base_uri}.gzip#{suffix})"
+          else
+            original
           end
-          suffix = "" if suffix =~ /\?\d{10}/ && @@remove_timestamps
-          
-          asset = Asset.new(uri)                       
-          puts "  - Changing URI #{uri} to #{base_uri}.gzip#{suffix}" if @@debug
-          
-          "#{b4_uri}#{uri}.gzip#{suffix}#{after_uri}"
         rescue Errno::ENOENT => e
           puts "  - Warning: #{uri} not found" if @@debug
           original
