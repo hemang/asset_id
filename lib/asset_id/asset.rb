@@ -268,7 +268,7 @@ module AssetID
                      
           suffix = "" 
           pos = [uri.index("#"), uri.index("?")].compact.min
-          unless pos.nil?
+          unless pos.nil? do
             suffix = uri.slice(pos..-1) 
             base_uri = uri.slice(0,pos)
           end
