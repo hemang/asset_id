@@ -94,6 +94,8 @@ module AssetID
         end  
         
         if @gzip
+          #Update paths to fonts, PIE.htc with .gzip extension for css assets     
+          asset.replace_font_gzips!(:web_host => @web_host) if asset.css? && @replace_images
           asset.gzip!
           files.each do |file|          
             zip_name = "#{file}.gzip"
@@ -251,10 +253,37 @@ module AssetID
           puts "  - Warning: #{uri} not found" if @debug
           original #TODO: Should this have asset_host?
         end
-    end 
-    
     end
     
+    def replace_font_gzips!(options={})
+      data.gsub! /url\((?:"([^"]*\/fonts\/\S*)"|'([^']*\/fonts\/\S*)'|([^)]*\/fonts\/\S*))\)/mi do |match|
+        begin
+          uri = ($1 || $2 || $3).to_s.strip
+          uri.gsub!(/^\.\.\//, '/')
+                    
+          b4_uri = options[:replace_with_b4_uri] || "url("
+          after_uri = options[:replace_with_after_uri] || ")"
+          original = "#{b4_uri}#{uri}#{after_uri}"
+          base_uri = uri
+                     
+          suffix = "" 
+          pos = [uri.index("#"), uri.index("?")].compact.min
+          unless pos.nil?
+            suffix = uri.slice(pos..-1) 
+            base_uri = uri.slice(0,pos)
+          end
+          suffix = "" if suffix =~ /\?\d{10}/ && @remove_timestamps
+          
+          asset = Asset.new(uri)                       
+          puts "  - Changing URI #{uri} to #{base_uri}.gzip#{suffix}" if @debug
+          
+          "#{b4_uri}#{uri}.gzip#{suffix}#{after_uri}"
+        rescue Errno::ENOENT => e
+          puts "  - Warning: #{uri} not found" if @debug
+          original
+        end
+    end
+        
     def gzip!
       # adapted from https://github.com/blakink/asset_id
       @data = returning StringIO.open('', 'w') do |gz_data|
