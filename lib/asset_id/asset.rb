@@ -69,27 +69,27 @@ module AssetID
         end
         
         #If content modified, replace content of original
-        asset.write_data if @replace_images && (asset.css? || asset.js?)
+        asset.write_data if @@replace_images && (asset.css? || asset.js?)
         
         files = []
         fingerprint_path = File.join(Asset.path_prefix, asset.fingerprint)
         files << fingerprint_path
         
-        if @rename 
+        if @@rename 
           puts "Renaming #{asset.path} to #{fingerprint_path}" if options[:debug]         
           File.rename(asset.path, fingerprint_path) 
         end
 
         #copy, if specified and not renaming
-        if !@rename && @copy
+        if !@@rename && @@copy
           puts "Copying #{asset.path} to #{fingerprint_path}" if options[:debug]
           files << asset.path
           FileUtils.cp(asset.path, fingerprint_path) if !File.exists? fingerprint_path
         end  
         
-        if @gzip
+        if @@gzip
           #Update paths to fonts, PIE.htc with .gzip extension for css assets     
-          asset.replace_font_gzips!(:web_host => @web_host) if asset.css? && @replace_images
+          asset.replace_font_gzips!(:web_host => @@web_host) if asset.css? && @@replace_images
           asset.gzip!
           files.each do |file|          
             zip_name = "#{file}.gzip"
