@@ -283,6 +283,7 @@ module AssetID
           puts "  - Warning: #{uri} not found" if @debug
           original
         end
+      end
     end
         
     def gzip!
