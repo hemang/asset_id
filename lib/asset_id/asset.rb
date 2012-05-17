@@ -7,43 +7,37 @@ module AssetID
   class Asset
     
     DEFAULT_ASSET_PATHS = ['favicon.ico', 'images', 'javascripts', 'stylesheets']
-    @asset_paths = DEFAULT_ASSET_PATHS
+    @@asset_paths = DEFAULT_ASSET_PATHS
     
     DEFAULT_GZIP_TYPES = ['text/css', 'application/javascript']
-    @gzip_types = DEFAULT_GZIP_TYPES
+    @@gzip_types = DEFAULT_GZIP_TYPES
     
-    class << self
-      attr_reader     :debug, :nocache, :nofingerprint, :skip_assets,
-                      :rename, :replace_images, :copy, :gzip, :asset_host,
-                      :web_host, :remove_timestamps, :asset_paths, :gzip_types
-    end
-    
-    @debug = false
-    @nocache = false
-    @nofingerprint = false
-    @skip_assets = nil
-    @rename = false
-    @replace_images = false
-    @copy = false
-    @gzip = false
-    @asset_host = false
-    @web_host = false
-    @remove_timestamps = true
+    @@debug = false
+    @@nocache = false
+    @@nofingerprint = false
+    @@skip_assets = nil
+    @@rename = false
+    @@replace_images = false
+    @@copy = false
+    @@gzip = false
+    @@asset_host = false
+    @@web_host = false
+    @@remove_timestamps = true
     
     attr_reader :path
     
     def self.init(options)
-      @debug = options[:debug] || false
-      @nocache = options[:nocache] || false
-      @nofingerprint = options[:nofingerprint] || []      
-      @skip_assets = options[:skip_assets] || nil
-      @rename = options[:rename] || false
-      @copy = options[:copy] || false
-      @replace_images = options[:replace_images] || false
-      @gzip = options[:gzip] || false     
-      @remove_timestamps = !(options[:remove_timestamps] == false)
-      @asset_host = options[:asset_host] || ''       
-      @web_host = options[:web_host] || ''
+      @@debug = options[:debug] || false
+      @@nocache = options[:nocache] || false
+      @@nofingerprint = options[:nofingerprint] || []      
+      @@skip_assets = options[:skip_assets] || nil
+      @@rename = options[:rename] || false
+      @@copy = options[:copy] || false
+      @@replace_images = options[:replace_images] || false
+      @@gzip = options[:gzip] || false     
+      @@remove_timestamps = !(options[:remove_timestamps] == false)
+      @@asset_host = options[:asset_host] || ''       
+      @@web_host = options[:web_host] || ''
     end
     
     def initialize(path)
@@ -59,14 +53,14 @@ module AssetID
     def self.process!(options={})
       init(options)
       assets.each do |asset|
-        if @skip_assets && asset.relative_path =~ @skip_assets
+        if @@skip_assets && asset.relative_path =~ @@skip_assets
           puts "Skipping #{asset.path}" if options[:debug]
           next
         end
                 
         #replace css images is intentionally before fingerprint       
-        asset.replace_css_images!(:asset_host => @asset_host, :web_host => @web_host) if asset.css? && @replace_images
-        asset.replace_js_images!(:asset_host => @asset_host, :web_host => @web_host) if asset.js? && @replace_images
+        asset.replace_css_images!(:asset_host => @@asset_host, :web_host => @@web_host) if asset.css? && @@replace_images
+        asset.replace_js_images!(:asset_host => @@asset_host, :web_host => @@web_host) if asset.js? && @@replace_images
         
         
         if options[:debug]
@@ -144,11 +138,11 @@ module AssetID
     end
     
     def self.asset_paths
-      @asset_paths
+      @@asset_paths
     end
     
     def self.asset_paths=(paths)
-      @asset_paths = paths
+      @@asset_paths = paths
     end
     
     def self.fingerprint(path)
@@ -226,7 +220,7 @@ module AssetID
           pos = [uri.index("#"), uri.index("?")].compact.min
           suffix = uri.slice(pos..-1) unless pos.nil?
           
-          suffix = "" if suffix =~ /\?\d{10}/ && @remove_timestamps
+          suffix = "" if suffix =~ /\?\d{10}/ && @@remove_timestamps
                     
           b4_uri = options[:replace_with_b4_uri] || "url("
           after_uri = options[:replace_with_after_uri] || ")"
@@ -241,7 +235,7 @@ module AssetID
             asset = Asset.new(uri)            
             host = uri=~ /fonts/i ? options[:web_host] : options[:asset_host] 
             
-            puts "  - Changing URI #{uri} to #{host}#{asset.fingerprint}#{suffix}" if @debug
+            puts "  - Changing URI #{uri} to #{host}#{asset.fingerprint}#{suffix}" if @@debug
           
             # TODO: Check the referenced asset is in the asset_paths
             # Suggested solution below. But, rescue is probably a better solution in case of nested paths and such
@@ -250,7 +244,7 @@ module AssetID
             "#{b4_uri}#{host}#{asset.fingerprint}#{suffix}#{after_uri}"
           end
         rescue Errno::ENOENT => e
-          puts "  - Warning: #{uri} not found" if @debug
+          puts "  - Warning: #{uri} not found" if @@debug
           original #TODO: Should this have asset_host?
         end
       end
@@ -273,14 +267,14 @@ module AssetID
             suffix = uri.slice(pos..-1) 
             base_uri = uri.slice(0,pos)
           end
-          suffix = "" if suffix =~ /\?\d{10}/ && @remove_timestamps
+          suffix = "" if suffix =~ /\?\d{10}/ && @@remove_timestamps
           
           asset = Asset.new(uri)                       
-          puts "  - Changing URI #{uri} to #{base_uri}.gzip#{suffix}" if @debug
+          puts "  - Changing URI #{uri} to #{base_uri}.gzip#{suffix}" if @@debug
           
           "#{b4_uri}#{uri}.gzip#{suffix}#{after_uri}"
         rescue Errno::ENOENT => e
-          puts "  - Warning: #{uri} not found" if @debug
+          puts "  - Warning: #{uri} not found" if @@debug
           original
         end
       end
@@ -296,11 +290,11 @@ module AssetID
     end
     
     def self.gzip_types
-      @gzip_types
+      @@gzip_types
     end
     
     def self.gzip_types=(types)
-      @gzip_types = types
+      @@gzip_types = types
     end
     
     def gzip_type?
@@ -312,8 +306,8 @@ module AssetID
     end
     
     def cache_hit?
-      return false if @nocache or Cache.miss? self
-      puts "AssetID: #{relative_path} - Cache Hit" if @debug
+      return false if @@nocache or Cache.miss? self
+      puts "AssetID: #{relative_path} - Cache Hit" if @@debug
       return true 
     end
        
