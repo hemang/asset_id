@@ -253,6 +253,7 @@ module AssetID
           puts "  - Warning: #{uri} not found" if @debug
           original #TODO: Should this have asset_host?
         end
+      end
     end
     
     def replace_font_gzips!(options={})
@@ -268,7 +269,7 @@ module AssetID
                      
           suffix = "" 
           pos = [uri.index("#"), uri.index("?")].compact.min
-          unless pos.nil? do
+          unless pos.nil?
             suffix = uri.slice(pos..-1) 
             base_uri = uri.slice(0,pos)
           end
