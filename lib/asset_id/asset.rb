@@ -24,6 +24,7 @@ module AssetID
     @@web_host = false
     @@remove_timestamps = true
     @@replace_font_gz = false
+    @@gz_suffix = '.gzip'
     
     attr_reader :path
     
@@ -40,6 +41,7 @@ module AssetID
       @@asset_host = options[:asset_host] || ''       
       @@web_host = options[:web_host] || ''
       @@replace_font_gz = options[:replace_font_gz] || false
+      @@gz_suffix = options[:gz_suffix] || '.gzip'
     end
     
     def initialize(path)
@@ -94,7 +96,7 @@ module AssetID
           asset.replace_font_gzips!(:web_host => @@web_host) if asset.css? && @@replace_font_gz
           asset.gzip!
           files.each do |file|          
-            zip_name = "#{file}.gzip"
+            zip_name = "#{file}#{@@gz_suffix}"
             puts "Zipping #{file} to #{zip_name}" if options[:debug]
             File.open(zip_name, 'wb+') {|f| f.write(asset.data) }
           end
@@ -151,7 +153,8 @@ module AssetID
       asset = Asset.new(path)
       hit = Cache.get(asset)
       return hit[:fingerprint] if hit
-      return asset.fingerprint
+      #Don't create new fingerprints in prod
+      Rails.env.production? ? path : asset.fingerprint
     end
     
     def fingerprint
@@ -161,7 +164,7 @@ module AssetID
       #Used to do something like: return p if p =~ /^\/assets\//
       
       #Handle .gz files - eg. application.css.gz -> application-12345534123.css.gz 
-      extension = (p =~ /\.gz$/ ? File.extname(File.basename(p, ".gz")) + ".gz" : File.extname(p))     
+      extension = (p =~ /#{@@gz_suffix}$/ ? File.extname(File.basename(p, @@gz_suffix)) + @@gz_suffix : File.extname(p))     
       
       File.join File.dirname(p), "#{File.basename(p, extension)}-#{md5}#{extension}"  
     end
@@ -274,9 +277,9 @@ module AssetID
             suffix = "" if suffix =~ /\?\d{10}/ && @@remove_timestamps
           
             asset = Asset.new(uri)                       
-            puts "  - Changing URI #{uri} to #{base_uri}.gzip#{suffix}" if @@debug
+            puts "  - Changing URI #{uri} to #{base_uri}#{@@gz_suffix}#{suffix}" if @@debug
           
-            "url(#{base_uri}.gzip#{suffix})"
+            "url(#{base_uri}#{@@gz_suffix}#{suffix})"
           else
             original
           end
