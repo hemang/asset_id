@@ -139,7 +139,7 @@ module AssetID
             a = Asset.new(file); 
           
             if @@skip_assets && a.relative_path =~ @@skip_assets
-              puts "#{a.path} not included in assets" if options[:debug]
+              puts "#{a.path} not included in assets" if @@debug
             elsif a.is_file? and !a.cache_hit?
               m << a 
             end
@@ -247,7 +247,7 @@ module AssetID
           else
             #Skip if asset host is present in uri
             host = uri=~ /fonts/i ? options[:web_host] : options[:asset_host] 
-            unless uri =~ host
+            unless uri =~ /#{Regexp.escape(host)}/
               asset = Asset.new(uri)            
               puts "  - Changing URI #{uri} to #{host}#{asset.fingerprint}#{suffix}" if @@debug
           
