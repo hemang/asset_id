@@ -131,12 +131,20 @@ module AssetID
     
     def self.assets(paths=Asset.asset_paths)
       paths.inject([]) {|assets, path|
-        path = Asset.get_absolute_path(path)
+        path = Asset.get_absolute_path(path)        
         a = Asset.new(path)
         assets << a if a.is_file? and !a.cache_hit?
         
-        assets += Dir.glob(path+'/**/*').inject([]) {|m, file|
-          a = Asset.new(file); m << a if a.is_file? and !a.cache_hit?; m 
+        assets += Dir.glob(path+'/**/*').inject([]) {|m, file|          
+            a = Asset.new(file); 
+          
+            if @@skip_assets && a.relative_path =~ @@skip_assets
+              puts "#{a.path} not included in assets" if options[:debug]
+            elsif a.is_file? and !a.cache_hit?
+              m << a 
+            end
+          
+            m 
           }
         }
     end
