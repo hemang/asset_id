@@ -261,8 +261,6 @@ module AssetID
           uri = ($1 || $2 || $3).to_s.strip
           uri.gsub!(/^\.\.\//, '/')
                                        
-          b4_uri = options[:replace_with_b4_uri] || "url("
-          after_uri = options[:replace_with_after_uri] || ")"
           original = "url(#{uri})"
           
           if uri =~ /fonts\//mi 
@@ -275,8 +273,7 @@ module AssetID
               base_uri = uri.slice(0,pos)
             end
             suffix = "" if suffix =~ /\?\d{10}/ && @@remove_timestamps
-          
-            asset = Asset.new(uri)                       
+                                
             puts "  - Changing URI #{uri} to #{base_uri}#{@@gz_suffix}#{suffix}" if @@debug
           
             "url(#{base_uri}#{@@gz_suffix}#{suffix})"
