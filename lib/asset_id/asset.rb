@@ -237,16 +237,20 @@ module AssetID
           if uri =~ /[a-z]+:\/\//i || uri =~ /data:/i
             original
           else
-            asset = Asset.new(uri)            
+            #Skip if asset host is present in uri
             host = uri=~ /fonts/i ? options[:web_host] : options[:asset_host] 
-            
-            puts "  - Changing URI #{uri} to #{host}#{asset.fingerprint}#{suffix}" if @@debug
+            unless uri =~ host
+              asset = Asset.new(uri)            
+              puts "  - Changing URI #{uri} to #{host}#{asset.fingerprint}#{suffix}" if @@debug
           
-            # TODO: Check the referenced asset is in the asset_paths
-            # Suggested solution below. But, rescue is probably a better solution in case of nested paths and such
-            # - https://github.com/KeasInc/asset_id/commit/0fbd108c06ad18f50bfa63073b2a8c5bbac154fb
-            # - https://github.com/KeasInc/asset_id/commit/14ce9124938c15734ec0c61496fd371de2b8087c
-            "#{b4_uri}#{host}#{asset.fingerprint}#{suffix}#{after_uri}"
+              # TODO: Check the referenced asset is in the asset_paths
+              # Suggested solution below. But, rescue is probably a better solution in case of nested paths and such
+              # - https://github.com/KeasInc/asset_id/commit/0fbd108c06ad18f50bfa63073b2a8c5bbac154fb
+              # - https://github.com/KeasInc/asset_id/commit/14ce9124938c15734ec0c61496fd371de2b8087c
+              "#{b4_uri}#{host}#{asset.fingerprint}#{suffix}#{after_uri}"
+            else
+              original 
+            end
           end
         rescue Errno::ENOENT => e
           puts "  - Warning: #{uri} not found" if @@debug
