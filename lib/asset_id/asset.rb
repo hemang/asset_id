@@ -63,7 +63,7 @@ module AssetID
         
         #If content modified, replace content of original
         #Fingerprinting for current asset should be after content replace
-        if @@replace_images && (asset.css? || asset.js?) do
+        if @@replace_images && (asset.css? || asset.js?) 
           asset.write_data 
           Cache.miss? asset #update cache if fingerprint has changed
         end
