@@ -57,17 +57,18 @@ module AssetID
     def self.process!(options={})
       init(options)
       assets.each do |asset|
-        #replace css images is intentionally before fingerprint       
+        #replace css images is intentionally before fingerprint of current asset       
         asset.replace_css_images!(:asset_host => @@asset_host, :web_host => @@web_host) if asset.css? && @@replace_images
         asset.replace_js_images!(:asset_host => @@asset_host, :web_host => @@web_host) if asset.js? && @@replace_images
-              
+        
+        #If content modified, replace content of original
+        #Fingerprinting for current asset should be after content replace
+        asset.write_data if @@replace_images && (asset.css? || asset.js?)
+        
         if options[:debug]
           puts "Relative path: #{asset.relative_path}" 
           puts "Fingerprint: #{asset.fingerprint}"
         end
-        
-        #If content modified, replace content of original
-        asset.write_data if @@replace_images && (asset.css? || asset.js?)
         
         files = []
         fingerprint_path = File.join(Asset.path_prefix, asset.fingerprint)
