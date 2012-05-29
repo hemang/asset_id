@@ -16,7 +16,8 @@ module AssetID
     end
     
     def self.cache_path
-      File.join(Rails.root, 'config','asset_id_cache_#{ENV["RACK_ENV"]}.yml')
+      filename = 'asset_id_cache_' + ENV['RACK_ENV'] + '.yml'
+      File.join(Rails.root, 'config', filename)
     end
     
     def self.get(asset)
