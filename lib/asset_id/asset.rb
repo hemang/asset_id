@@ -65,6 +65,7 @@ module AssetID
         #Fingerprinting for current asset should be after content replace
         if @@replace_images && (asset.css? || asset.js?) 
           asset.write_data 
+          asset.force_md5
           Cache.miss? asset #update cache if fingerprint has changed
         end
         
@@ -177,6 +178,10 @@ module AssetID
     
     def md5
       @digest ||= Digest::MD5.hexdigest(data)
+    end
+    
+    def force_md5
+      @digest = Digest::MD5.hexdigest(data)
     end
     
     def mime_type
