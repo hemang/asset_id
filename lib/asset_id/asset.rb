@@ -63,7 +63,10 @@ module AssetID
         
         #If content modified, replace content of original
         #Fingerprinting for current asset should be after content replace
-        asset.write_data if @@replace_images && (asset.css? || asset.js?)
+        if @@replace_images && (asset.css? || asset.js?) do
+          asset.write_data 
+          Cache.miss? asset #update cache if fingerprint has changed
+        end
         
         if options[:debug]
           puts "Relative path: #{asset.relative_path}" 
